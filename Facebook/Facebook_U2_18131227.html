@@ -1,0 +1,307 @@
+<!-- 
+     Materia: BIG DATA
+     Maestra: Lamia Hamdan M.
+
+    Integrantes:
+     Jesus Rodolfo Terán Cuellar 18131392
+     Ricardo Raúl Castro Luna 1831227
+-->
+
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Facebook</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <style media="screen">
+    #fb-btn {
+      margin-top: 20px;
+    }
+
+    #profile,
+    #logout,
+    #feed {
+      display: none
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+
+    /*
+      Para utilizar el SDK de Facebook para JavaScript no es 
+      necesario descargar ni instalar ningún archivo independiente. 
+      Solo se necesita incluir un fragmento de código JavaScript 
+      en el HTML que cargará asincrónicamente el SDK en la página
+    */
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId            : '2377176175756212', // ID del App de facebook
+        cokkie           : true,             // Habilita las cookies para que se pueda acceder a la sesión
+        xfbml            : true,   // Analizar los plugins de la página web.
+        version          : 'v13.0'  // Version del Graph API que ese esta llamando
+      });
+    };
+
+
+    /*
+      En el fragmento de configuración básica, se inicializa la versión en_US del SDK,
+      lo que significa que todos los botones y plugins generados por Facebook
+      que se utilicen en el sitio estarán en inglés estadounidense. 
+      Se puedes cambiar el idioma modificando el valor de src. 
+    */
+    //src="https://connect.facebook.net/es_LA/sdk.js
+
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) { return; }
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    
+    // Recibe como parametro los resultados de FB.getLoginStatus()
+    function statusChangeCallback(response) { 
+      if (response.status === 'connected') {  // Se ha iniciado sesión en la página y en Facebook
+        console.log('Conectado y autentificado');  // Se manda en consola un mensaje para comprobar la conexion
+        setElements(true);   // Se llama a la función setElements y se manda como parametro true
+        testAPI();  // Se llama a la función testAPI, solo si se logra la conexion correctamente
+      } else {  // No se ha iniciado sesión en la página
+        console.log('No autentificado'); // Se manda en consola un mensaje para comprobar la conexion
+        setElements(false);  // Se llama a la función setElements y se manda como parametro false
+      }
+    }
+
+    function checkLoginState() { // Se llama cuando se ha terminado con el botón de iniciar sesión
+      /*
+       Se inicia una llamada a Facebook con el objetivo de 
+       obtener el estado de inicio de sesión. 
+       Facebook luego llama a la función de devolución de llamada (Callback)
+       con los resultados.
+      */
+      FB.getLoginStatus(function (response) {
+        statusChangeCallback(response);
+      });
+    }
+
+    // Función donde se llamara a Graph API
+    function testAPI() {
+
+        // FB.api(path, method, params, callback)
+
+        /*
+            path: 	string
+            Aqui va la ruta de Graph API que 
+            quiere llamar. 
+
+            ## Ejemplo:
+            - '/me'                 <- a ti mismo
+            - '/113124472034820'    <-  una pagina de Facebook
+
+            ** Este es un parámetro obligatorio. **
+        */
+
+        /*
+           method: enum{get, post, delete}
+           Aqui se pone el método HTTP que desea utilizar 
+           para la solicitud de la API. 
+           El por defecto es get
+        */
+
+        /*
+           params: object
+           Este es un objeto que consiste en cualquier parámetro 
+           que desee pasar a su llamada a la Graph API. 
+           Los parámetros que se pueden utilizar varían en 
+           función del punto final al que se llame. 
+
+           Los tokens de acceso nunca deben ser 
+           utilizados en el SDK, ya que es del lado del cliente.
+
+            ## Ejemplo:
+            - 'name'                
+            - 'email'    
+        */
+
+        /*
+          callback: function
+          Esta es la función que se activa cada vez que la API devuelve 
+          una respuesta. El objeto de respuesta para esta función
+          contiene el resultado de la API.
+        */
+
+        /*
+           Aqui se esta llamando los parametros de 'name','email','birthdat','location'
+           del usario actual osea yo, para luego comprobar si el objeto con el
+           resultado existe y que no haya pasado un error, si pasa por ambas
+           condiciones exitosamente entonces se mandara un mensaje a la
+           consola con el objeto respuesta y un pequeño titulo,
+           y se llamara a la función buildProfile
+           con el objeto como parametro
+        */
+      FB.api('/me?fields=name,email,birthday,location', function(response){
+          if(response && !response.error){
+            console.log('Usuario: ');
+            console.log(response);
+            buildProfile(response);
+          }
+
+          // Aqui sucede practimente lo mismo solo que aqui el parametro 
+          // es el feed del usuario, y ademas de llama de diferente forma
+          // a la funcion si se dan cuenta sin la necesidad de fields
+          // y que aqui se llama a la función buildFeed
+          FB.api('/me/feed', function(response){
+            if(response && !response.error){
+              console.log('Feed: ');
+              console.log(response);
+              buildFeed(response);
+            }
+          });
+        })
+    }
+
+    /*
+       En buildProfile como con parametro el objeto resultado del llamada a la API,
+       se construira una tabla con los datos generales del usuario,
+       creando una varible donde se guardara un fragmento de HTML entre comillas
+       que tiene algunas lineas de codigo de javascript en medio de estas 
+       como las variables de Facebook
+
+       para al final usar un getElementById donde se le iguala a la variable con
+       el fragmento de HTML con el cual se le puso con el id de 'profile' para su
+       uso posterior en el archivo
+    */
+    function buildProfile(response) {
+      let profile = `
+          <h3>${response.name}</h3>
+          <ul class="list-group">
+            <li class="list-group-item">User ID: ${response.id}</li>
+            <li class="list-group-item">Email: ${response.email}</li>
+            <li class="list-group-item">Birthday: ${response.birthday}</li>
+            <li class="list-group-item">Location: ${response.location}</li>
+          </ul>
+        `;
+
+      document.getElementById('profile').innerHTML = profile;
+    }
+
+
+    /*
+       En buildDFeed sucede algo bastante similar que buildProfile pero este tiene un
+       pequeño truco para que hacer posible mostrar los datos del objeto, ya que el
+       objeto feed tiene adentro un arreglo de objetos, por eso mismo tenemos que
+       llegar a usar un for
+    */
+    function buildFeed(feed) {
+        // En el tema de la varibale se asigna un h3, que servira como titulo
+      let salida = '<h3>Ultimos Posts</h3>'
+      // Se crea un for que empieza desde 0, y el largo de este es la cantidad de datos de feed,
+      // y como es comun se suma i en 1 por cada ciclo del for
+      for(let i = 0; i < feed.data.length; i++) {
+          // regresando con la variable, se le ira sumando a este mismo con la ayuda de +=
+          // con el mensaje y tiempo del dato de feed 
+        salida += `
+            <div class="well">
+                ${feed.data[i].message} <span>${feed.data[i].created_time}</span>
+            </div>`;
+      }
+      
+      // Y igualmente como con buildProfile se usará getElementById
+      document.getElementById('feed').innerHTML = salida;
+    }
+
+
+    /*
+      La propiedad display establece el tipo de visualización de un elemento
+      
+      - Un elemento HTML block llena toda la línea, y no se puede mostrar 
+            nada a su izquierda o derecha
+
+      - Un elemento HTML none, oculta todo el elemento
+    */
+
+    // Esta función se llamo en statusChangeCallBack junto con TestApi
+    function setElements(isLoggedIn) {
+        // Si es true se mostrada todo lo que tiene 'block'
+        // y se ocultara todo lo que esta en 'none', 
+        // todo gracias a los usos de los id's
+      if (isLoggedIn) {
+        document.getElementById('logout').style.display = 'block';
+        document.getElementById('profile').style.display = 'block';
+        document.getElementById('feed').style.display = 'block';
+        document.getElementById('fb-btn').style.display = 'none';
+        document.getElementById('heading').style.display = 'none';
+      } else {
+        document.getElementById('logout').style.display = 'none';
+        document.getElementById('profile').style.display = 'none';
+        document.getElementById('feed').style.display = 'none';
+        document.getElementById('fb-btn').style.display = 'block';
+        document.getElementById('heading').style.display = 'block';
+      }
+      // Aqui se sucede lo mismo, pero aqui se le aplica los 'none' y 'block'
+      // de forma inversa
+    }
+
+    /*
+      Función que se usa para cerrar la sesión, este solo aparecera cuando
+      se haya iniciado sesión a Facebook
+    */
+    function logout() {
+      FB.logout(function (response) {
+          // Se llama a la función setElements con un false como parametro,
+          // lo que significa que ocultara varias cosas en la pagina
+        setElements(false);
+      });
+    }
+  </script>
+
+  <nav class="navbar navbar-default">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+          aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">Facebook</a>
+      </div>
+      <div id="navbar" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav">
+          <li><a href="index.html">Home</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+            <!-- Aqui se llama la función logout() -->
+          <li><a id="logout" href="#" onclick="logout()">Cerrar sesión</a></li> 
+          
+        <!-- 
+              Este es el boton de Facebook con el cual se inicia sesión
+              
+              scope: 	data-scope
+              Lista de permisos que se solicitan durante el inicio de sesión
+
+              Para despues llamar a la función checkLoginState()
+            -->
+          <fb:login-button id="fb-btn" scope="public_profile,email,user_birthday,user_location,user_posts"
+            onlogin="checkLoginState();">
+          </fb:login-button>
+          
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h3 id="heading">Inicie sesión para ver su perfil</h3>
+    <div id="profile"></div>
+    <div id="feed"></div>
+  </div>
+</body>
+
+</html>
